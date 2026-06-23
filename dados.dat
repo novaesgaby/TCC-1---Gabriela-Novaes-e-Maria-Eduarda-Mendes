@@ -1,17 +1,12 @@
-```mathprog
-# ==========================================
-# DADOS DO MODELO (EXEMPLO TEÓRICO)
-# ==========================================
-
-# Definindo os nomes dos fornecedores e biorrefinarias
 set FORNECEDORES := Fazenda_Alfa Fazenda_Beta;
 set BIORREFINARIAS := PBIO_Usina_Teste;
 
-# Capacidade máxima de processamento da usina (ex: em toneladas)
 param capacidade := 
   PBIO_Usina_Teste 5000;
 
-# Custo de transporte por tonelada de cada fazenda até a usina
+param demanda :=
+  PBIO_Usina_Teste 3000;
+
 param custo_transporte : PBIO_Usina_Teste :=
   Fazenda_Alfa             15.50
   Fazenda_Beta             22.00;
