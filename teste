@@ -34,7 +34,7 @@ subject to Atender_Demanda{b in BIORREFINARIAS}:
 data;
 
 # ==========================================
-# DADOS DO MODELO (EXEMPLO TEÓRICO)
+# DADOS DO MODELO 
 # ==========================================
 set FORNECEDORES := Fazenda_Alfa Fazenda_Beta;
 set BIORREFINARIAS := PBIO_Usina_Teste;
