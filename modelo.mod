@@ -1,5 +1,5 @@
 # ==============================================================================
-# 1. PARTE DO MODELO (.mod) - Estrutura e Regras
+# MODELO (.mod) - Estrutura e Regras (biocombustível)
 # ==============================================================================
 
 # CONJUNTOS (Índices)
