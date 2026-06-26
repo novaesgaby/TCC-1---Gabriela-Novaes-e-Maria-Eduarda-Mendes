@@ -1,14 +1,59 @@
-set FORNECEDORES := Fazenda_Alfa Fazenda_Beta;
-set BIORREFINARIAS := PBIO_Usina_Teste;
+# ==============================================================================
+# 2. PARTE DOS DADOS (.dat) 
+# ==============================================================================
+data;
 
-param capacidade := 
-  PBIO_Usina_Teste 5000;
+# Definição dos horizontes e elementos
+set T := t1 t2;
+set K := k1;
+set P := p1 p2;
+set C := c1 c2;
+set U := u1;
 
-param demanda :=
-  PBIO_Usina_Teste 3000;
+# Parâmetros Escalares
+param alfa := 0.40; # 40% de rendimento de óleo por semente
 
-param custo_transporte : PBIO_Usina_Teste :=
-  Fazenda_Alfa             15.50
-  Fazenda_Beta             22.00;
+# Parâmetros Indexados por K
+param beta := k1 0.90;
+param CC   := k1 15.0;
+param W_barra := k1 5000.0;
 
-end;
+# Parâmetros Indexados por P
+param PC := p1 120.0 p2 130.0;
+
+# Parâmetros em Matrizes Duplas [P, T]
+param gama :=
+    [p1, *] := t1 3.5 t2 3.8
+    [p2, *] := t1 4.0 t2 4.2;
+
+param AZ :=
+    [p1, *] := t1 15.0 t2 15.0
+    [p2, *] := t1 20.0 t2 20.0;
+
+param Z_barra :=
+    [p1, *] := t1 1000.0 t2 1200.0
+    [p2, *] := t1 1500.0 t2 1500.0;
+
+# Parâmetros em Matrizes Duplas [U, T]
+param D :=
+    [u1, *] := t1 800.0 t2 1000.0;
+
+param OC :=
+    [u1, *] := t1 450.0 t2 470.0;
+
+# Parâmetros em Vetores por Período [T]
+param TF := t1 10 t2 15;
+
+# Parâmetros em Matrizes de Distância/Custo de Transporte [P, C]
+param GTC : c1 c2 :=
+    p1 10.0  25.0
+    p2 22.0  12.0;
+
+# Parâmetros em Matrizes de Distância/Custo de Transporte [C, U]
+param OTC : u1 :=
+    c1 8.0
+    c2 9.0;
+
+# Parâmetros em Matrizes de Instalação [K, T]
+param IC :=
+    [k1, *] := t1 50000.0 t2 52000.0;
