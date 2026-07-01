@@ -1,0 +1,50 @@
+dados; 
+
+# Cenário focado em 2 períodos representando o histórico analisado (2024 e 2025)
+set T := 2024 2025;
+
+# Polos regionais de fornecimento e redes de catadores de Minas Gerais
+set P := polo_norteMG polo_semiarido;
+set R := rede_catadores_moc rede_urbana;
+
+# Rendimento físico da Soja (padrão de mercado)
+param alfa := 0.19;
+
+# Capacidade e custos industriais da Usina de Montes Claros
+param CC := 45.0; 
+
+# Custos associados à matéria-prima reciclada (OGR)
+param C_OGR := 
+    rede_catadores_moc 110.0 
+    rede_urbana        125.0;
+
+# Parâmetros indexados das Zonas de Agricultura Familiar (Polo Regional)
+param PC := polo_norteMG 140.0 polo_semiarido 155.0;
+param GTC := polo_norteMG 18.0 polo_semiarido 25.0;
+
+# Produtividade e Restrições de Área [P, T]
+param gama :=
+    [polo_norteMG, *]  := 2024 2.8 2025 3.1
+    [polo_semiarido, *] := 2024 2.2 2025 2.5;
+
+param AZ :=
+    [polo_norteMG, *]  := 2024 12.0 2025 12.0
+    [polo_semiarido, *] := 2024 15.0 2025 15.0;
+
+param Z_barra :=
+    [polo_norteMG, *]  := 2024 50000.0 2025 60000.0
+    [polo_semiarido, *] := 2024 40000.0 2025 45000.0;
+
+# Escalonamento da Demanda Real baseada na capacidade e cota da planta (em m³)
+param D := 
+    2024 95000.0 
+    2025 110000.0; # Crescimento alinhado com a mistura de 15%
+
+param v_cost := 
+    2024 480.0 
+    2025 510.0;
+
+# Metas de Inclusão do Selo Biocombustível Social (Famílias)
+param TF := 2024 1800 2025 2200;
+
+end;
