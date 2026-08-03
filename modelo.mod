@@ -1,65 +1,84 @@
-# ==============================================================================
-# MODELO (.mod) - Estrutura e Regras (biocombustível)
+
+# MODELO DE OTIMIZAÇÃO DA CADEIA DE SUPRIMENTOS - PBIO (MONTES CLAROS)
 # ==============================================================================
 
 # CONJUNTOS (Índices)
-set T; # Período de tempo (t)
-set K; # Projeto de planta de britagem (k)
-set P; # Zona de produção (p)
-set C; # Possível localização da planta de britagem (c)
-set U; # Usina de biodiesel (u)
+set T; # Períodos de tempo (ex: 2024 e 2025)
+set P; # Zonas produtoras de oleaginosas (Agricultura Familiar / Semiárido)
+set R; # Cooperativas/Fontes de Óleos e Gorduras Residuais (OGR)
+set M; # Matérias-primas / Oleaginosas disponíveis (Soja, Algodão, Macaúba, etc.)
 
-# PARAMETROS
-param alfa;                           # Percentagem de óleo na semente oleaginosa
-param beta{K};                        # Eficiência de britagem de uma planta tipo k
-param gama{P, T};                     # Produtividade de oleaginosas na zona p no período t
-param AZ{P, T};                       # Tamanho médio da área de terra na zona p no período t
-param CC{K};                          # Custo unitário de britagem de uma planta tipo k
-param D{U, T};                        # Demanda de óleo vegetal da planta de biodiesel u no período t
-param GTC{P, C};                      # Custo unitário de transporte de p para c
-param IC{K, T};                       # Custo de instalação da planta de britagem tipo k no período t
-param OTC{C, U};                      # Custo unitário de transporte de óleo de c para u
-param OC{U, T};                       # Custo do óleo vegetal para usina u no período t
-param PC{P};                          # Custo unitário de produção de oleaginosas na zona p
-param TF{T};                          # Número mínimo de famílias a serem alocadas no período t
-param W_barra{K};                     # Capacidade anual da planta de britagem tipo k
-param Z_barra{P, T};                  # Área total disponível da zona p no período t
+# PARÂMETROS
+param alfa;                           # Rendimento de óleo na semente (ex: 0.19)
+param gama{P, T};                     # Produtividade agrícola na zona p no período t
+param AZ{P, T};                       # Tamanho médio dos lotes das famílias na zona p
+param Z_barra{P, T};                  # Área máxima disponível para cultivo na zona p
+param D{T};                           # Demanda total de biodiesel/óleo no período t
+param TF{T};                          # Número mínimo de famílias do Selo Social no período t
+param Capacidade_Usina;               # Capacidade máxima de trituração/esmagamento (Restrição 7)
+param OfertaOGR{R, T};                # Disponibilidade máxima de OGR por fonte (Restrição 9)
+param CompraMax{T};                   # Limite máximo de compra externa de óleo (Restrição 10)
 
-# VARIÁVEIS DE DECISÃO
-var y{C, K, T} binary;                # Decisão de instalar a planta {0,1}
-var z{P, T} >= 0;                     # Tamanho da área p alocada
-var gx{P, C, T} >= 0;                 # Quantidade de oleaginosas transportadas de p para c
-var ox{C, U, T} >= 0;                 # Quantidade de óleo vegetal transportado de c para u
-var w{C, K, T} >= 0;                  # Quantidade de sementes trituradas em c pela planta k
-var v{U, T} >= 0;                     # Quantidade de óleo vegetal comprada por u
+# PARÂMETROS DE CUSTO
+param PC{P};                          # Custo unitário de produção agrícola na zona p
+param GTC{P};                         # Custo de transporte de sementes da zona p até a usina
+param CC;                             # Custo unitário de esmagamento na usina
+param C_OGR{R};                       # Custo unitário de aquisição de OGR da fonte r
+param v_cost{T};                      # Custo de oportunidade para compra de óleo externo
 
-# FUNÇÃO OBJETIVO (Minimizar Custos)
+# VARIÁVEIS DE DECISÃO (Todas com não-negatividade explicita - Restrição 11)
+var z{P, T} >= 0;                     # Área de terra alocada para agricultura familiar
+var gx{P, T} >= 0;                    # Volume de sementes transportadas
+var ogr_x{R, T} >= 0;                 # Volume de OGR adquirido
+var w{T} >= 0;                        # Total de sementes trituradas na planta
+var v{T} >= 0;                        # Óleo complementar adquirido do mercado
+
+# ==============================================================================
+# FUNÇÃO OBJETIVO: Minimizar o Custo Total de Produção e Logística (1)
+# ==============================================================================
 minimize Custo_Total:
-    sum{c in C, k in K, t in T} (IC[k,t] * y[c,k,t]) +
-    sum{p in P, c in C, t in T} (GTC[p,c] * gx[p,c,t]) +
-    sum{c in C, u in U, t in T} (OTC[c,u] * ox[c,u,t]) +
-    sum{p in P, t in T} (PC[p] * z[p,t]) +
-    sum{c in C, k in K, t in T} (CC[k] * w[c,k,t]) +
-    sum{u in U, t in T} (OC[u,t] * v[u,t]);
+    sum{p in P, t in T} (PC[p] * z[p,t]) +         # Custos de fomento agrícola
+    sum{p in P, t in T} (GTC[p] * gx[p,t]) +       # Custos de transporte (Inbound)
+    sum{t in T} (CC * w[t]) +                      # Custos industriais de esmagamento
+    sum{r in R, t in T} (C_OGR[r] * ogr_x[r,t]) +  # Custos de aquisição de OGR
+    sum{t in T} (v_cost[t] * v[t]);                # Custo de compra externa
 
-# RESTRIÇÕES
-s.t. Atendimento_Demanda{u in U, t in T}:
-    sum{c in C} ox[c,u,t] + v[u,t] >= D[u,t];
+# ==============================================================================
+# RESTRIÇÕES DO SISTEMA
+# ==============================================================================
 
-s.t. Limite_Area{p in P, t in T}:
+# Restrição (2): Atendimento da Demanda
+s.t. Atendimento_Demanda{t in T}:
+    (alfa * w[t]) + sum{r in R} ogr_x[r,t] + v[t] >= D[t];
+
+# Restrição (3): Limite de Área Agrícola Disponível
+s.t. Limite_Area_Disponivel{p in P, t in T}:
     z[p,t] <= Z_barra[p,t];
 
-s.t. Minimo_Familias{t in T}:
+# Restrição (4): Cumprimento do Selo Biocombustível Social
+s.t. Cumprimento_Selo_Social{t in T}:
     sum{p in P} (z[p,t] / AZ[p,t]) >= TF[t];
 
-s.t. Producao_Zona{p in P, t in T}:
-    sum{c in C} gx[p,c,t] = gama[p,t] * z[p,t];
+# Restrição (5): Balanço de Massa Agrícola
+s.t. Balanco_Massa_Agricola{p in P, t in T}:
+    gx[p,t] = gama[p,t] * z[p,t];
 
-s.t. Balanco_Trituracao{c in C, t in T}:
-    sum{p in P} gx[p,c,t] = sum{k in K} w[c,k,t];
+# Restrição (6): Balanço de Processamento Industrial
+s.t. Balanco_Processamento{t in T}:
+    w[t] = sum{p in P} gx[p,t];
 
-s.t. Producao_Oleo{c in C, t in T}:
-    sum{u in U} ox[c,u,t] = sum{k in K} (alfa * beta[k] * w[c,k,t]);
+# Restrição (7): Capacidade Industrial da Usina
+s.t. Capacidade_Industrial{t in T}:
+    w[t] <= Capacidade_Usina;
 
-s.t. Capacidade_Planta{c in C, k in K, t in T}:
-    w[c,k,t] <= W_barra[k] * sum{t_linha in T: t_linha <= t} y[c,k,t_linha];
+# Restrição (8): Percentual Mínimo de OGR (14%)
+s.t. Percentual_Minimo_OGR{t in T}:
+    sum{r in R} ogr_x[r,t] >= 0.14 * D[t];
+
+# Restrição (9): Limite Máximo de Disponibilidade de OGR por Fornecedor
+s.t. Disponibilidade_Max_OGR{r in R, t in T}:
+    ogr_x[r,t] <= OfertaOGR[r,t];
+
+# Restrição (10): Limite Máximo para Aquisição Externa de Óleo
+s.t. Teto_Compra_Externa{t in T}:
+    v[t] <= CompraMax[t];
